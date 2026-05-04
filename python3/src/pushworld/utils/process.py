@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import resource
 import subprocess
 import sys
+import time
 from typing import Callable, Optional, Tuple
+
+try:
+    import resource
+except ImportError:
+    resource = None
 
 # These definitions are standard since 1998. (https://en.wikipedia.org/wiki/Gigabyte)
 KILOBYTE = 1000
@@ -25,6 +30,8 @@ GIGABYTE = 1000 * MEGABYTE
 
 def get_child_process_cpu_time() -> float:
     """Returns the total CPU time in seconds used by child processes of this process."""
+    if resource is None:
+        return time.monotonic()
     child_times = resource.getrusage(resource.RUSAGE_CHILDREN)
     return child_times.ru_utime + child_times.ru_stime
 
@@ -59,6 +66,8 @@ def run_process(
         raise ValueError("memory_limit must be a positive integer")
 
     def preexec_fn():
+        if resource is None:
+            return
         if time_limit is not None:
             # See `https://github.com/aibasel/downward/blob/main/driver/limits.py` for
             # an explanation of this `try..except`.
@@ -71,13 +80,20 @@ def run_process(
             resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
 
     start_cpu_time = get_child_process_cpu_time()
+    popen_kwargs = {}
+    if resource is not None:
+        popen_kwargs["preexec_fn"] = preexec_fn
     proc = subprocess.Popen(
         command,
-        preexec_fn=preexec_fn,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        **popen_kwargs,
     )
-    out = proc.communicate()[0]  # this waits for the process to terminate
+    try:
+        out = proc.communicate(timeout=None if resource is not None else time_limit)[0]
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        out = proc.communicate()[0]
     cpu_run_time = get_child_process_cpu_time() - start_cpu_time
 
     out = out.strip().decode("utf-8")

@@ -15,7 +15,6 @@
 import os
 import random
 
-from pushworld.benchmark_rgd import benchmark_rgd_planner
 import tqdm
 import yaml
 
@@ -273,6 +272,8 @@ def filter_puzzles_by_solvability(
       "Running planner to filter puzzles for solvability, with time_limit:"
       f" {time_limit}"
   )
+  from pushworld.benchmark_rgd import benchmark_rgd_planner
+
   benchmark_rgd_planner(
       puzzles_path=path, time_limit=time_limit, results_path=path
   )

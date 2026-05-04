@@ -1,0 +1,16 @@
+# Optional dependencies for the PushWorld PPO vector training pipeline.
+# This file is self-contained for PPO training/evaluation and avoids the
+# older hash-pinned base requirements when they are brittle on Windows.
+
+gym==0.26.1
+dm-env>=1.5
+numpy>=1.21,<2
+pytest>=6.2
+torch>=2.2
+comet_ml>=3.49
+
+# Needed only when generating new puzzles through scripts/generate_level0_puzzles.py
+# or train_ppo.py with --num_generated_puzzles > 0.
+fire>=0.4
+PyYAML>=6
+tqdm>=4.64

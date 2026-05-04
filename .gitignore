@@ -1,0 +1,52 @@
+# Python bytecode and test/tool caches.
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ipynb_checkpoints/
+
+# Python virtual environments and packaging output.
+.venv/
+venv/
+/python3/venv/
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Local experiment outputs, generated puzzles, checkpoints, and logs.
+/python3/runs/
+/python3/puzzle_images/
+/python3/puzzle_solutions/
+/python3/training_puzzles/
+/python3/pddl_puzzles/
+*.pt
+*.pth
+*.ckpt
+*.log
+
+# Extracted from benchmark/puzzles/level0.zip for local experiments.
+/benchmark/puzzles/level0/
+
+# CMake/C++ build outputs.
+/cpp/build/
+/cpp/cmake-build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# Local editor, OS, and environment files.
+.vscode/
+.idea/
+*.code-workspace
+.env
+.env.*
+.DS_Store
+Thumbs.db
+desktop.ini

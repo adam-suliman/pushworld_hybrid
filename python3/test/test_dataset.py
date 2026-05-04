@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import subprocess
 
 import yaml
 
@@ -24,7 +25,9 @@ from pushworld.utils.filesystem import get_puzzle_file_paths, iter_files_with_ex
 def test_dataset() -> None:
     """Checks that every puzzle in the dataset has a solution."""
 
-    puzzle_file_paths = get_puzzle_file_paths(BENCHMARK_PUZZLES_PATH)
+    puzzle_file_paths = _filter_git_ignored_paths(
+        get_puzzle_file_paths(BENCHMARK_PUZZLES_PATH)
+    )
     visited_puzzles = set()
     errors = []
 
@@ -59,3 +62,40 @@ def test_dataset() -> None:
     # Raise all errors in batch, which is easier to debug.
     if len(errors) > 0:
         raise ValueError("\n".join(errors))
+
+
+def _filter_git_ignored_paths(puzzle_file_paths):
+    """Removes local/generated files ignored by Git from dataset validation."""
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    names_by_relative_path = {}
+    for puzzle_name, file_path in puzzle_file_paths.items():
+        relative_path = os.path.relpath(os.path.abspath(file_path), repo_root)
+        relative_path = relative_path.replace(os.path.sep, "/")
+        names_by_relative_path[relative_path] = puzzle_name
+
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--stdin"],
+            cwd=repo_root,
+            input="\n".join(names_by_relative_path) + "\n",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return puzzle_file_paths
+
+    ignored_names = set()
+    for line in result.stdout.splitlines():
+        ignored_path = line.strip().strip('"')
+        if ignored_path.endswith("\\r"):
+            ignored_path = ignored_path[:-2]
+        ignored_path = ignored_path.strip()
+        if ignored_path in names_by_relative_path:
+            ignored_names.add(names_by_relative_path[ignored_path])
+    return {
+        puzzle_name: file_path
+        for puzzle_name, file_path in puzzle_file_paths.items()
+        if puzzle_name not in ignored_names
+    }
